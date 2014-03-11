@@ -1,0 +1,28 @@
+# This file contains regular expressions used as features of particular tokens
+# No entity tag is needed as matches of these regular expressions will not
+# be added as named entities.
+#
+# General notes:
+#  Commented lines begin with a '#'
+#  Regular expressions should be written in boost::regex format for c++
+#  Regular expressions are treated as case insensitive
+#  Quotation marks should not be included unless they are part of a regular 
+#  expression
+#  Construction of regular expressions through use of variables is not
+#  not permitted in this file.  Since only individual tokens are matched
+#  regular expressions are likely to be simpler than those matching multiple
+#  tokens
+
+(\d{2})
+(\d{4})
+(?:january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|october|oct|november|nov|december|dec)
+(?:mon|monday|tues|tuesday|wed|wednesday|thurs|thur|thursday|fri|friday|sat|saturday|sun|sunday)
+(?:(?:[1-3]?(?:0th|1st|2nd|3rd|[4-9]th)|11th|12th|13th)|(?:3[01]|[0-2]{0,1}\d)|(?:(?:(?:twenty\s|thirty\s)?(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth))|tenth|eleventh|twelfth|(?:thir|four|fif|six|seven|eigh|nine)teenth)|twentieth|thirtieth)
+(?:A|B|C|D|AD|BC)
+(?:year|month|week|day)
+(?:this|next|last)
+(?:today|tomorrow|yesterday)
+(?:river|creek|lake|desert|mount|mountain|bridge|ocean|sea|strait|island|farm)
+(?:in|the|of|at)
+(?:dollars|dollar|cent|cents|pound|pounds)
+(?:why|where|who|what|when|how)

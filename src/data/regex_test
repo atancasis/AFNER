@@ -1,0 +1,93 @@
+# This file contains specification of custom regular expressions paired with 
+# Named Entity types
+# Regular expressions can be constructed from variables defined within this file
+#
+# General notes:
+#  Commented lines begin with a '#'
+#  Regular expressions should be written in boost::regex format for c++
+#  Regular expressions are treated as case insensitive
+#  Quotation marks should not be included unless they are part of a regular 
+#  expression
+#  Entity tags must be written in a format similar to:
+#     <ENAMEX TYPE="PERSON">
+#   or:
+#     <ENAMEX TYPE="ORGANIZATION:CORPORATION">
+#
+# Setting Variables:
+#   The 'SET' keyword is used to set variables
+#   The 'SET' keyword must be followed by the variable name, then any number of #   strings.  Spaces are ignored.
+#   For example:
+#     To set variable 'test' to the value "ten"
+#       SET test ten
+#     To set variable 'test' to "tennineeight"
+#       SET test ten nine eight
+#
+# Accessing Variables:
+#   Variables are accessed by using a '$' character before the variable name
+#   For example:
+#   To set variable 'test1' to value "tennineeight"
+#       SET test1 $test
+#   To set variable 'test1' to value "tennineeightsevensixfive"
+#       SET test1 $test seven six five
+#
+# Mapping to named entity tags:
+#   The 'MAP' keyword is used to map regular expressions to entity tags
+#   For example:
+#   To map regular expression '(?:\$\s*d+\.?\d{2})' 
+#   to type <NUMEX TYPE="MONEY">
+#     MAP (?:\$\s*d+\.?\d{2}) <NUMEX TYPE="MONEY">
+#   Alternatively:
+#     SET regex (?:\$\s*d+\.?\d{2})
+#     MAP $regex <NUMEX TYPE="MONEY">
+#
+#   Note - The following will NOT work:
+#     SET regex (?:\$\s*d+\.?\d{2})
+#     SET type <NUMEX TYPE="MONEY"> --- type will be set to <NUMEXTYPE="MONEY">
+#     MAP $regex $type --- '$type' will be treated as an (invalid) entity tag
+#   
+
+SET monthex (?:january|jan|february|feb|march|mar|april|apr|may|june|jun|july|jul|august|aug|september|sep|october|oct|november|nov|december|dec)
+SET dayex (?:(?:[1-3]?(?:0th|1st|2nd|3rd|[4-9]th)|11th|12th|13th)|(?:3[01]|[0-2]{0,1}\d)|(?:(?:(?:twenty\s|thirty\s)?(?:first|second|third|fourth|fifth|sixth|seventh|eighth|ninth))|tenth|eleventh|twelfth|(?:thir|four|fif|six|seven|eigh|nine)teenth)|twentieth|thirtieth)
+SET yearex (?:\d{4})
+SET wdayex (?:mon|monday|tues|tuesday|wed|wednesday|thurs|thur|thursday|fri|friday|sat|saturday|sun|sunday)
+SET yearalonex (?:(?:\d+\s(?:B\.C\.|BC|A\.D\.|AD)|(?:[1-2]\d{3})))
+SET relex (?:(?:this|next)year|month|week| $wdayex )
+SET spacex \s{1,2}
+SET spommex ,\s{0,2}
+SET nonwordex \W{0,2}
+SET joinex |
+SET datex1 (?: $dayex $spacex $monthex $spommex $yearex )
+SET datex2 (?: $monthex $spacex $dayex $spommex $yearex )
+SET datex3 (?: $monthex $spommex $yearex )
+SET datex4 (?: $dayex $spacex $monthex )
+SET datex5 (?: $monthex $spacex $dayex )
+SET datex6 (?: $wdayex $spommex $dayex $spacex $monthex )
+SET datex7 (?: $wdayex $spommex $dayex $spacex $monthex $spommex $yearex )
+SET datex8 (?: $wdayex $spommex $monthex $spacex $dayex $spommex $yearex )
+SET datex (?: $datex1 $joinex $datex2 $joinex $datex3 $joinex $datex4 $joinex $datex5 $joinex $datex6 $joinex $datex7 $joinex $datex8 $joinex $yearalonex $relex )
+SET mintenex (?: $spacex twenty|thirty|fourty|fifty)
+SET wminutex (?: $spacex (?:(?: $mintenex (?: )?)?(?:one|two|three|four|five|six|seven|eight|nine))|(?:ten|eleven|twelve)|(?:(?:thir|four|fif|six|seven|eigh|nine)teen)| $mintenex )
+SET dminutex (?:[0-5]?\d)
+SET minutex (?: $wminutex $joinex $dminutex )
+SET dhourex (?:1[0-2]|0?[1-9])
+SET labelex (?:half|quarter)
+SET diffex (?:past|to)
+SET whourex (?: $spacex one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)
+SET hourex (?: $dhourex $joinex $whourex )
+SET ampmex (?:am|pm|a\.m\.?|p\.m\.?)
+SET complicatedex (?:(?: $minutex $joinex $labelex ) $spacex (?:minutes $spacex  )? $diffex $spacex $hourex $spacex $ampmex ?)
+SET simplex (?: $hourex (?:(?: $spacex $minutex )|: $minutex |o'clock)(?: $spacex $ampmex )?)
+SET timex $complicatedex $joinex $simplex
+SET speedex (?:\d+(?:\.|,)?\d+\s?(?:kph|mph|kmh|miles\sper\shour|kilometers\sper\shour|ms/1|meters\sper\ssecond|mps))
+SET moneyex (?:\$\s*\d+\.?\d{2})|(?:\d+\s(?:cents|dollars?))
+SET colourex (?:(?:dark|light)?(?:red|yellow|pink|green|purple|orange|blue|black|white))
+SET shapex (?:polygon|circle|square|rectangle|triangle|oval|trapezium|rhombus|diamond)
+
+# Variables set, datex, timex, speedex, moneyex, colourex, shapex
+MAP $timex <TIMEX TYPE="TIME">
+MAP $speedex <NUMEX TYPE="SPEED">
+MAP $moneyex <NUMEX TYPE="MONEY">
+MAP $datex <TIMEX TYPE="DATE">
+MAP $colourex <ENAMEX TYPE="COLOR">
+MAP $shapex <ENAMEX TYPE="SHAPE">
+

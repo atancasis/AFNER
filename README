@@ -1,0 +1,65 @@
+Read COPYING for information about licensing
+
+SourceForge page:
+
+http://sourceforge.net/projects/afner/
+
+
+AFNER is part of the AnswerFinder project:
+
+http://www.ics.mq.edu.au/~diego/answerfinder/
+
+
+Installing
+----------
+
+To install AFNER, run the following three commands:
+
+> autoreconf
+> configure
+> make
+
+An executable 'afner' will be created in the 'src' directory.
+
+The file INSTALL gives more details about the configure program
+
+Dependencies
+------------
+
+You need the following software to install and run this program. This
+version has been tested on ubuntu. Send us an email if you
+successfully install the program in another platform and I'll
+incorporate your information.
+
+* autoconf
+
+* Boost libraries (www.boost.org). The following libraries are required:
+     - regex
+     - program_options
+     - path
+     - serialization
+     - filesystem
+
+Running
+-------
+
+To run AFNER as a stand-alone program, use the executable src/afner. A
+simple example of use is:
+
+> cd src
+> afner -P ~/corpora/BBN/unison/Test/Input/ -O afner-output
+
+This example runs AFNER in testing mode to find the named entities of
+all files stored in the directory '~/corpora/BBN/unison/Test/Input/'. The
+result is stored in directory 'afner-output/'.
+
+For the full options run afner --help. For a more detailed explanation
+of the system read the documentation in the 'doc' directory.
+
+Documentation
+-------------
+
+The installation process will create the file 'doc/afnerDoc.info' that
+can be read using the 'info' program. To create an HTML version, run:
+
+> make html

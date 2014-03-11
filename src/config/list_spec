@@ -1,0 +1,15 @@
+# This file contains lists used by the recogniser paired with an entity tag
+# corresponding to elements in the list
+# blank lines and lines beginning with a '#' are ignored
+
+../lists/ned.list.LOC.txt
+<ENAMEX TYPE="LOCATION">
+
+../lists/ned.list.PER.txt
+<ENAMEX TYPE="PERSON">
+
+../lists/ned.list.ORG.txt
+<ENAMEX TYPE="ORGANIZATION">
+
+../lists/languages
+<ENAMEX TYPE="LANGUAGE">

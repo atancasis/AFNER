@@ -1,0 +1,5 @@
+- Speed improvement (run profiler to find computing intensive parts).
+- Move hard-coded list locations to configuration file/arguments.
+- Allow configurable tagset.
+- Allow additional list files.
+- Revise/extend documentation.

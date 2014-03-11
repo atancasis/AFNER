@@ -1,0 +1,1084 @@
+This is afnerDoc.info, produced by makeinfo version 4.11 from
+afnerDoc.texi.
+
+Documentation for AFNER
+
+   Copyright 2007, Daniel Smith, Macquarie University.
+
+
+File: afnerDoc.info,  Node: Top,  Next: Overview,  Prev: (dir),  Up: (dir)
+
+   This documentation is still under construction.  It may contain
+errors or omissions.
+
+* Menu:
+
+* Overview::            An overview of AFNER.
+* Running AFNER::       How to run AFNER.
+* Components::          An explanation of each component in AFNER.
+* Output::              Output produced.
+* API::                 Details of the Application Program Interface.
+* Notes::               Notes on AFNER.
+* Concept Index::       This index has two entries.
+
+
+File: afnerDoc.info,  Node: Overview,  Next: Running AFNER,  Prev: Top,  Up: Top
+
+1 Overview
+**********
+
+AFNER is a named entity recogniser that uses a maximum entropy
+classifier in combination with pattern (regular expression) and list
+matching. It can be run independently or incorporated into another
+program.
+
+   The classifier used is adapted from YASMET
+(http://www.fjoch.com/YASMET.html) by Franz Josef Och, and YASMET is
+used to generate the model file from training data.  Consequently,
+training data is produced in the format required by YASMET.
+
+   AFNER provides flexibility to enable/disable features, and
+incorporate custom regular expressions and lists without any
+modification to the code. As such, the best features for a particular
+task can be chosen.
+
+   Features used in the classifier include token specific features
+(e.g. capitalisation), as well as complete or partial matches against
+items in a list or with a regular expression.
+
+
+File: afnerDoc.info,  Node: Running AFNER,  Next: Components,  Prev: Overview,  Up: Top
+
+2 Running AFNER
+***************
+
+AFNER has four modes:
+
+   * `--run'   In the running mode AFNER uses a model to classify an
+     unseen document. This is the default option.
+
+   * `--train'   In the training mode AFNER builds a new model based on
+     the documents provided. There are several models available. Use
+     this mode only if you want to create a new model for a different
+     corpus.
+
+   * `--dump'   In the dumping mode AFNER produces a feature file that
+     uses YASMET format. AFNER does not perform any training or
+     classification.
+
+   * `--count'   In the counting mode words of the training corpus are
+     counted to build frequency lists. This needs to be done once prior
+     to training if the features PrevClass and ProbClass are used. In
+     the current implementation these features lower the results of
+     AFNER so it is recommented not to run AFNER in this mode. This
+     effectively disables the PrevClass and ProbClass features.
+
+
+   Program options can be set either at command line or in a
+configuration file.  The configuration file can be set with the
+-config-file or -c option.  With many options it may be better to set
+the options in a configuration file.
+
+     afner -c afner_config.cfg
+
+2.1 Program Options
+===================
+
+At command line the options available are:
+   *   `-h [--help]': produces a help message
+
+   *   `-c [--config-file] <filename>': specifies the file containing
+     settings to use.
+
+
+   The following options can be set either at command line or in a
+configuration file and they can be applied for testing, for training or
+for both.
+
+2.1.1 Common Options
+--------------------
+
+The common options across all modes are:
+
+   *   `-P [--path] <pathname>': a directory containing the data   used
+     for training or testing. One or more  `-P' or `-f'  are required.
+
+   *   `-f [--file] <filename>': a specific file to use for training
+     or testing. One or more  `-P' or `-f'  are required.
+
+   *   `-C [--context] <number>': optional parameter to control the
+     range of contextual features used.
+
+   *   `--entity_list <filename>': file containing location of entity
+     lists paired with entity tags. It defaults to config/list_spec.
+
+   *   `-g [--tagset] <filename>': file containing list of tags to use.
+     The same tagset should be used for testing and training. Default
+     is config/BBN_tags.
+
+   *   `-x [--regex-file] <filename>': file containing regular
+     expressions used by the recogniser. Matches to these regular
+     expressions will be added as entities, and partial matches will be
+     used as features of each token. The same regular expressions
+     should be used for both testing and training. Default is
+     config/regex.
+
+   *   `-y [--feature-regex-file] <filename>': file containing regular
+     expressions used only in classification. Each regular expression
+     listed here will be have a corresponding feature to reflect a
+     match.  This is different to the broad regular expressions since
+     these named entities will not be created from matches to these
+     regular expressions. Again, the same file should be used for
+     testing and training. Default is config/feature_regex.
+
+   *   `--feature-weight <feature name> <int>': sets the weight of a
+     feature. The list of features available and their weights is
+     printed when AFNER is run. This option can be repeated to specify
+     weights to several features.
+
+   *   `--default-feature-weight <int>': sets the default weight of
+     all features that are not specified with the option
+     `--feature-weight'.
+
+   *   `--token-frequency-input <filename>': a file containing token
+     frequencies computed during the first training; this file needs to
+     be created once (using the mode for counting) before any training
+     is done.
+
+   *   `--prev-token-frequency-input <filename>': a file containing the
+     frequencies of the previous token; this file needs to be created
+     once (using the mode for counting) before any training is done.
+
+2.1.2 Testing (mode `--run')
+----------------------------
+
+The options specific for testing are:
+
+   *   `--run': the indicator that sets the testing (aka running) mode.
+     This is the default option.
+
+   *   `-M [--model-file] <filename>': the model file to use in
+     classification. Default is config/BBN.mdl.
+
+   *   `-F [--format] <NORMAL|SHORT>': The format of output from the
+     recogniser.  Either NORMAL or SHORT. Default is NORMAL.
+
+   *   `-L [--max-labels] <int>' : the maximum number of labels
+     (classifications) that can be assigned to a token.
+
+   *   `-S [--single]': allow only single classification per token.
+     Default is to allow multiple classifications.
+
+   *   `-e [--threshold] <float>': optional - the minimum probability
+     allowed for named entities, between 0.0 and 1.0. The default is
+     0.0.
+
+   *   `-O [--output-path] <pathname>': location to dump the output.
+     Default is 'afner-output'
+
+
+2.1.3 Training (mode `--train')
+-------------------------------
+
+The options specific for training are:
+
+   *   `--train': the indicator that sets the training mode.
+
+   *   `-D [--training-data-file] <filename>': the location to print
+     training data for use by YASMET. This is a REQUIRED option.
+
+   *   `--output-model-file] <filename>': the model file to be
+     generated. This is a REQUIRED option.
+
+
+2.1.4 Dumping (mode `--dump')
+-----------------------------
+
+The dumping mode does not have any specific options.
+
+2.1.5 Counting (mode `--count')
+-------------------------------
+
+The options specific for counting are:
+
+   *   `--count': the indicator that sets the counting mode.
+
+   *   `--token-frequency-output <filename>': a file where to dump the
+     token frequencies; this file needs to be created once (using the
+     mode for counting) before any training is done.
+
+   *   `--prev-token-frequency-output <filename>': a file where to dump
+     the frequencies of the previous token; this file needs to be
+     created once (using the mode for counting) before any training is
+     done.
+
+
+2.2 Run Mode
+============
+
+In the run mode the program expects a model file (there are several
+model files available in the directory `src/data') and a set of files.
+The output is a set of files with the named entities marked up as
+offsets of the original files. A typical run would be like this:
+
+     afner -P inputPath -O outputPath
+
+   This would find the entities of all files stored in `inputPath' by
+using the default model `config/bbn.mdl' based on the BBN corpus
+adapted to the MUC tags.
+
+   It is possible to specify other models by using the option `-M'.
+There are several models available in the directory `data'.
+Alternatively a new model can be generated using AFNER in training
+mode. It can also be generated by running the YASMET code with the data
+dumped by using AFNER in dumping mode *Note Classifier::.
+
+   The resulting named entities are written to files in the directory
+specified by the `-O' option; each output file has the same name as the
+corresponding input file. The results directory is relative to the
+location of the file being tested *Note Output::.  If the directory does
+not exist, AFNER will attempt to recreate the directory structure.
+
+2.3 Train Mode
+==============
+
+To run in train mode AFNER requires:
+   * either training data files (`-f [--file] <filename>') or a
+     directory containing training data files (`-P [--path] <pathname>')
+
+   * a file to store training data (`-D [--training-data-file]
+     <filename>')
+
+   * a file containing the tagset to use (`-g [--tagset] <filename>')
+
+   * a model file (`--outpu-model-file <filename>') that will be
+     generated after calling YASMET.
+
+   * if the features PrevClass or ProbClass are used, AFNER requires the
+     files with the token frequencies (`--token-frequency-input
+     <filename>' and `--prev-token-frequency-input <filename>'). See
+     the section Count mode below for further details on this.
+
+
+   The following is an example of a typical training run:
+
+     afner --train --output-model-file modelfile -D yasmetDataFile \
+     -P trainPath
+
+   This example uses all the files in `trainPath' for training the
+system and produces the model file `modelfile'. It also produces the
+raw input data for YASMET `yasmetDataFile'.
+
+     afner --train --output-model-file modelfile -D yasmetDataFile \
+     -f trainFile
+
+   This example uses only one file `trainFile' for training the system
+and produces the model file `modelfile' and the raw input data for
+YASMET `yasmetDataFile'.
+
+     afner --train --output-model-file modelfile -D yasmetDataFile \
+     -P trainPath1 -P trainPath2 -f trainFile1 -f trainFile2
+
+   This example uses the files `trainFile1' and `trainFile2' plus all
+files from `trainPath1' and `trainPath2'.
+
+2.4 Dump Mode
+=============
+
+The dump mode is exactly the same as the train mode, only that no model
+is generated. Instead, the file specified by option
+`--training-data-file' is generated with the features in a format that
+YASMET understands.
+
+2.5 Count Mode
+==============
+
+Some of AFNER features (PrevClass and ProbClass) need to use
+information about token frequencies and previous token frequencies.
+Prior to any training AFNER needs to be run in counting mode to
+generate these frequencies (options `--token-frequency-output
+<filename>' and `--prev-token-frequency-output <filename>'). However,
+in the current implementation features PrevClass and ProbClass lower the
+results of AFNER so it is recommented not to generate token frequencies.
+
+2.6 Evaluating the Results
+==========================
+
+A python script is provided in the directory `src/utilities' that can
+be used to evaluate the accuracy of AFNER. An example run is:
+
+     utilities/test.py -c RemediaAnnot/level4/ resultsNew/
+
+   This example uses the annotated corpus stored in
+`RemediaAnnot/level4/' to evaluate the results that are in
+`resultsNew/'; these results are the output of AFNER. The evaluation
+results are sent to standard output.
+
+   The evaluation script assumes that the testing files used by AFNER
+have all the annotation markup removed prior to calling to AFNER. The
+script `utilitities/remove_non_ent_tags.py' can be used to remove all
+markup.
+
+
+File: afnerDoc.info,  Node: Components,  Next: Entity Tagset,  Prev: Running AFNER,  Up: Top
+
+3 Components
+************
+
+* Menu:
+
+* Entity Tagset::                 Handles the tags used by the recogniser.
+* Regular Expression Handler::    Finds entities matching a regular expression.
+* Tokeniser::                     Splits the text into individaul tokens.
+* List Handler::                  Finds entities that appear in lists.
+* Classifier::                    Finds entities that have been classified as
+                                  such by the machine learning
+                                  algorithm.
+
+
+File: afnerDoc.info,  Node: Entity Tagset,  Next: Regular Expression Handler,  Prev: Components,  Up: Components
+
+3.1 Entity Tagset
+=================
+
+Information regarding named entity tags is stored using the EntityTag
+and EntityTagset classes. The EntityTag class stores tag information
+and allows for an arbitrary level of granularity.
+
+   A Named Entity may be marked up as so:
+
+     <ENAMEX TYPE="ORGANIZATION">Free Software Foundation</ENAMEX>
+
+   or with an additional level of granularity:
+
+     <ENAMEX TYPE="ORGANIZATION:CORPORATION">Microsoft</ENAMEX>
+
+   The EntityTag class assumes at least 2 levels (ENAMEX/NUMEX/TIMEX
+and TYPE). Subsequent levels are identified by a separating ':'.
+
+   An EntityTag object can be initialised with the opening tag string,
+root tag and sub-tags (as two strings), or with a vector of strings
+where each index corresponds to the level (i.e. 0 - root, 1 - type, 2 -
+sub-type etc).
+
+   The EntityTagset class stores a collection of EntityTag objects, and
+assigns each tag with an index, from which a classification can be
+calculated. Each tag is assumed to have two classifications, Begin and
+In.
+
+   An EntityTagset can be initialised with either an input stream or
+string. Typically, a tagset will be read from a file of the following
+format:
+
+     <ENAMEX TYPE="LOCATION">
+     <TIMEX TYPE="TIME">
+     <ENAMEX TYPE="ORGANIZATION">
+     <TIMEX TYPE="DATE">
+     <NUMEX TYPE="MONEY">
+     <ENAMEX TYPE="PERSON">
+
+   Since the classifications returned by the tagset are used by the
+classifier, it is important to use the same tagset for training and
+testing.
+
+
+File: afnerDoc.info,  Node: Regular Expression Handler,  Next: Tokeniser,  Prev: Entity Tagset,  Up: Components
+
+3.2 Regular Expression Handler
+==============================
+
+Regular expressions used to create entities and as features for matches
+spanning multiple tokens are handled by the RegexHandler class. This
+class reads and stores regular expressions and matches each with a
+custom EntityTag.
+
+   Regular expressions can be specified in an external file. The
+RegexHandler class allows for construction of regular expressions using
+variables assigned within this file, and mapped to entity tags also
+specified within the file.  The tags used need not correspond to those
+used by the classifier.
+
+   See the example file for more information on how to specify regular
+expressions and map them to entity tags.
+
+3.2.1 Regular Expressions in AFNER
+----------------------------------
+
+Regular expressions used by AFNER must be in the BOOST regular
+expression (http://www.boost.org/libs/regex/doc/index.html) format.
+
+   AFNER uses regular expressions in two ways.  Firstly, long regular
+expressions are used to match named entities spanning multiple tokens.
+A feature indicating that each token within the match is part of a
+larger match. Since named entities are created from the matches, an
+entity tag must be assigned to each regular expression provided.  Due
+to possible complexity, these expressions can be constructed.  See the
+example file `config/regex_test' for details of how to specify which
+regular expressions should be used.
+
+   Secondly, regular expression matches are used as featurs of
+individual tokens.  These smaller regular expressions are used only as
+features of the tokens they match, no matching will be done over more
+than one token. As such, these expressions cannot be constructed in the
+same way as the broader multi-token expressions can.  Additionally, no
+entity type is needed. See the example file `config/feature_regex'.
+
+
+File: afnerDoc.info,  Node: Tokeniser,  Next: List Handler,  Prev: Regular Expression Handler,  Up: Components
+
+3.3 Tokeniser
+=============
+
+Each token is stored as an object, with private data members in that
+object recording the offset in the string that the token occurs in.
+The list of tokens retrieved skips any XML tags, and lists punctuation
+as separate tokens.
+
+   The string is searched for all matches of each regular expression
+and each match is added as a named entity to the list of entities
+stored in the decorator ('NEDeco') object.
+
+   For example, the string:
+
+     "Company operated, through a 50%-owned joint venture, 27 warehouses in Mexico. Something something $3.60 and $10."
+
+   is tokenised to become:
+
+     'Company','operated',',','through','a','50','%-','owned','joint','venture',',','27','warehouses',
+     'in','Mexico','.','Something','something','$','3','.','60','and','$','10','.'
+
+   Tokenisation is performed using the function
+`tokenise(beginIterator,endIterator,skipXML=true)', which returns a
+`vector<Token>'.  Used in this way, text between the iterators is
+tokenised and XML is skipped by default. Each token in the vector
+returned contains offsets from the start of the point of tokenisation.
+
+   Tokenisation that retrieves information about marked up named
+entities can also be done.  The function `tokeniseWithNEInfo' performs
+this operation, returning a vector of 'NEToken's.
+
+
+File: afnerDoc.info,  Node: List Handler,  Next: Lists,  Prev: Tokeniser,  Up: Components
+
+3.4 List Handler
+================
+
+* Menu:
+
+* Lists::    Details on the implementation of list checking
+* SuffixTree::    Details on how the lists are stored in a SuffixTree
+
+   Lists are handled by the ListHandler class, which utilises Menno van
+Zaanen's suffixtree implementation. The ListHandler class pairs each
+list with an EntityTag, allowing Entities to be created from list
+matches.
+
+   The list of tokens is traversed, and each token searched for in a
+suffixtree built from a concatenation of all entities in several lists.
+
+   Each a search for each token from the string is conducted.  The
+largest possible match is found. First, the string alone is checked. if
+this matches, then this is recorded as the largest match. Then, the
+token is checked with the next token afterwards.  If this matches as a
+complete string, then the largest is reset to this string. The process
+is repeated until the next token no longer matches.
+
+   Each token is not concatenated with the next one.  As each token
+only records the offset in the string, the search string is that found
+in the original string within the bounds of the offsets indicated by
+the token.  In this way, only exact matches will be found, and it is
+not possible for co-incidental matches to be found.
+
+   List matching tokens are marked up, the matches are used as features
+in the recogniser.  List matches are also added as NamedEntity objects.
+
+
+File: afnerDoc.info,  Node: Lists,  Next: SuffixTree,  Prev: List Handler,  Up: List Handler
+
+3.4.1 Lists
+-----------
+
+The lists are stored in files in the following format:
+
+     LOC Persingen
+     LOC Perth
+     LOC Peru
+     LOC P�ruwelz
+     LOC Pervijze
+     LOC Perwez
+
+   Each list element is marked with a start('^') and end ('|')
+character and added to a new string so that the list is stored in the
+following format:
+
+     ^Persingen|^Perth|^Peru|^P�ruwelz|^Pervijze|^Perwez|
+
+   The same process occurs for each of the lists (persons, locations,
+organisations, other).  The tag corresponding to entities listed and
+length of each resulting string is recorded. Each resultant string is
+concatenated with the location in the string at which each list ends is
+recorded in a map matching the tag with th list:
+
+   Lists are not available from this website.  Check past NER tasks for
+lists of persons, locations etc.
+
+   At the moment the list file locations and matching entity tags are
+hard-coded into the program.  This is due to errors occurring when more
+than a single suffixtree instance is created. The list locations and
+tags can be modified in `ner.cpp'.
+
+
+File: afnerDoc.info,  Node: SuffixTree,  Next: Classifier,  Prev: Lists,  Up: List Handler
+
+3.4.2 SuffixTree
+----------------
+
+If a search of the suffixtree using the function `stringFound()' is
+unsuccessful, then the location returned will be -1. Otherwise, the
+location in the string is returned.
+
+
+File: afnerDoc.info,  Node: Classifier,  Next: Features,  Prev: SuffixTree,  Up: Components
+
+3.5 Classifier
+==============
+
+The classifier makes use of classifications assigned to entity tags
+stored in a EntityTagset object.
+
+   The classifier finds named entities using a maximum entropy
+algorithm adapted from YASMET (http://www.fjoch.com/YASMET.html) by
+Franz Josef Och. Firstly, training data needs to be produced from a
+corpus of annotated documents. Each document is tokenised and features
+computed to produce the training data.  The training data is produced
+in the following format:
+
+     <num categories>
+     <classification> @ @ <weight of class> <feature 1> <value 1> <feature 2> <value 2>....# @ <weight of class> <feature 1> <value 1> ....
+
+   The features for each class are duplicated, and the feature names
+changed to correspond with the respective class that the data is
+duplicated for.  The actual training data looks like:
+
+     13
+     0 @ @ 1 cat0_alphnum 1 cat0_caps 2 .... # @ 0 cat1_alphnum 1 cat1_caps 2 .... # @ 0 cat2_alphnum 1 .... cat12_found6 0 #
+
+   This is redundant, as the values will be the same for each feature.
+This is a legacy of the YASMET code.
+
+   Once training data is generated, a model can be produced.  The model
+file is the result of mathematical analysis of the training data and is
+what is used in classification.  The model file is produced by running
+the original YASMET code with the training data.
+
+   For classification, the model file is given to the decorator class.
+The MaxEnt class is initialised with the model file, and the model is
+read so data can be classified. A feature vector is computed for each
+token and a classification is returned by the classifier based on the
+values of the features in the vector.
+
+* Menu:
+
+* Features::    A list of the features currently used.
+
+
+File: afnerDoc.info,  Node: Features,  Next: Output,  Prev: Classifier,  Up: Classifier
+
+3.5.1 Features
+--------------
+
+The features included were implemented by Alex Chilvers
+(http://www.comp.mq.edu.au/~achilver).  The following binary features
+have been included so far:
+
+   * `InitCaps' - Whether the token's first character is capitalized
+
+   * `AllCaps' - Whether all characters in the token are capitalized
+
+   * `MixedCaps' - Whether there is a mix of upper lowercase characters
+     in the token
+
+   * `AlwaysCapped' - Whether a token is always capitalised in the text.
+
+   * `IsSentEnd' - Whether token is an end of sentence character, ie.
+     '.' or '!' or '?'
+
+   * `InitCapPeriod' - Whether the token starts with a cap and is
+     followed by a period e.g. Mr.
+
+   * `OneCap' - Whether the token is one capital letter
+
+   * `ContainDigit' - Whether the token contains a digit
+
+   * `TwoDigits' - Whether the token is 2 digits, eg. '97' or '06'
+
+   * `FourDigits' - Whether the token is 4 digits, eg. '1985'
+
+   * `MonthName' - Whether token is a month name, eg 'November'
+
+   * `DayOfTheWeek' - Whether token is a day of the week, eg. 'monday'
+
+   * `NumberString' - Whether token is a number word, eg. 'one',
+     'thousand'
+
+   * `PrepPreceded' - Whether token is preceded by a preposition (in a
+     window of 4 tokens)
+
+   * `PartMatch' - Whether a token is part of a match of a regular
+     expression or list item spanning multiple tokens.  The printed
+     name changes depending on the match.
+
+   * `FoundInList' - Whether the token is found as an element in a
+     list.  The printed feature name changes depending on the matching
+     list.
+
+   * `MatchRegex' - Whether the token matches a regular expression.
+
+   Other features may still be implemented, in particular those using
+global information, ie. whether a token occurs in a series of
+capitalised words; whether an acronym for the capitalised series is
+found.
+
+
+File: afnerDoc.info,  Node: Output,  Next: API,  Prev: Features,  Up: Top
+
+4 Output
+********
+
+See the details on training data for information on training data
+output.
+
+   Sample output from a run of AFNER is as follows:
+
+     Offset: 68-72; Word: Will; Entity Type: PERSON
+     Offset: 82-86; Word: Moon; Entity Type: PERSON
+     Offset: 100-105; Word: North; Entity Type: LOCATION
+     Offset: 100-113; Word: North America; Entity Type: LOCATION
+     Offset: 106-113; Word: America; Entity Type: LOCATION
+     Offset: 115-130; Word: August 16, 1989; Entity Type: DATE
+
+   The offset refers to the position of the entity within the document.
+Note that entity offsets can overlap, where an entity is classified
+within another. Entities are ordered first on the left offset, then the
+right.
+
+
+File: afnerDoc.info,  Node: API,  Next: Class Structure,  Prev: Output,  Up: Top
+
+5 API
+*****
+
+5.1 Using AFNER C++ Functions
+=============================
+
+The file `main.cpp', is a good example of use of the main AFNER
+functions from a C++ program. This section explains those functions in
+more detail
+
+* Menu:
+
+* Class Structure::        Overview of the class structure.
+* Training::               Finds entities matching a regular expression.
+* Testing::                Splits the text into individaul tokens.
+* Without Classification:: Finds entities that appear in lists.
+* Feature Expansion::      Adding additional features.
+
+
+File: afnerDoc.info,  Node: Class Structure,  Next: Training,  Prev: API,  Up: API
+
+6 Class Structure
+*****************
+
+ [image src="Classes.jpg" alt="Class diagram cannot be displayed." ]
+
+The NamedEntity Class 
+
+   The NamedEntity class is used to store details about a particular
+named entity.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+Constructor               
+`NamedEntity(beginString, The constructor simply accepts details and
+startEnt, endEnt, type)'  assigns the private data members of the
+                          NamedEntity.
+`leftOffset()'            Returns the location of the beginning of the
+                          entity in the original string.
+`rightOffset()'           Returns the location of the end of the entity
+                          in the original string.
+`length()'                Returns the length of the entity.
+`getType()'               Returns the type of the entity as an
+                          EntityType.
+`getTypeString()'         Returns the type of the entity as a string.
+`getString()'             Returns the entity as a string.
+`printDetails(ostream&    Prints the details of the entity to the output
+out)'                     stream given.
+`getDetails()'            Returns the details of the entity as a string
+                          suitable for output.
+
+   The NEDeco Class 
+
+   The NEDeco class decorates a given string with entities; that is, it
+finds named entities in the string. The NEDeco class also has static
+functions that can be used generally to find named entities.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+Constructor               
+`NEDeco(text, true,       The constructor accepts a string and finds
+modelFile)'               named entities contained within it. Whether or
+                          not machine learning methods are used can be
+                          set with the second parameter, and a modelFile
+                          (filename) must be passed as well.
+`Decorate(const           'Decorate' accepts a StringXML, and fills the
+StringXML& text,          given vector with NamedEntity objects for
+vector<NamedEntity>&      those found in the StringXML.
+entities,bool             
+classify=true,StringXML   
+modelFile="")'            
+`findDates(const          Static function to find dates within some
+StringXML& text,          given text and add them to the vector of
+vector<NamedEntity>&      NamedEntity s given.
+entities)'                
+`findTimes(const          Static function to find times within some
+StringXML&                given text and add them to the vector of
+text,vector<NamedEntity>& NamedEntity s given.
+entities)'                
+`findSpeeds(const         Static function to find speeds within some
+StringXML&                given text and add them to the vector of
+text,vector<NamedEntity>& NamedEntity s given.
+entities)'                
+`findMoney(const          Static function to find money expressions
+StringXML&                within some given text and add them to the
+text,vector<NamedEntity>& vector of NamedEntity s given.
+entities)'                
+`findListed(const         Static function to find listed entities within
+StringXML::const_iterator&some given text and add them to the vector of
+startOfString,const       NamedEntity s given.
+vector<Token>&            
+tokens,vector<NamedEntity>&
+entities)'                
+`findClassified(const     Static function to find tokens classified as
+StringXML& text, const    named entities within some given text and add
+vector<Token>& tokens,    them to the vector of NamedEntity s given.
+vector<NamedEntity>&      
+entities,StringXML        
+modelFile)'               
+`findAny(const            'findAny' accepts a boost::regex pattern, a
+boost::regex& regex,      StringXML, a vector<NamedEntity>, and a
+const StringXML&          EntityType. Fills the given vector with
+text,vector<NamedEntity>& NamedEntity objects of type given for those
+entities, const           found in string that match the given pattern.
+NamedEntity::EntityType&  
+type)'                    
+
+   The Token Class 
+
+   Token denotes a word in the text.  Offsets from the start of the
+original string are stored, rather than iterators to locations in the
+string.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+Constructor               
+`Token(StringXML::size_typeThe constructor simply accepts details and
+begin=0,                  assigns the private data members of the Token.
+StringXML::size_type      
+end=0)'                   
+`setBegin(StringXML::size_type)'Sets the begin offset of the token.
+`setEnd(StringXML::size_type)'Sets the end offset of the token.
+`getBegin()'              Returns the begin offset of the token.
+`getEnd()'                Returns the end offset of the token.
+`getBeginIterator(const   Returns an iterator to the begin of the token
+StringXML::const_iterator based on the origin
+origin)'                  
+`getEndIterator(const     Returns an iterator to the end of the token
+StringXML::const_iterator based on the origin
+origin)'                  
+`getString(const          Returns a StringXML that is the string the
+StringXML& original)'     token points to with respect to 'original'.
+                          (Token only stores offsets.)
+
+   The NEToken Class 
+
+   An NEToken is a token that also contains information about whether a
+token had a given entity type.  Used for tokenisation of annotated text.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+Constructors              
+`NEToken()'               
+`NEToken(Token t,         
+NamedEntity::Classification
+t)'                       
+`NEToken(StringXML::size_typeThe constructor simply accepts details and
+b, StringXML::size_type   assigns the private data members of the
+e,                        NEToken.
+NamedEntity::Classification
+t)'                       
+`setClass(NamedEntity::ClassificationSets the named entity type of the token.
+t)'                       
+`getClass()'              Returns the named entity type of the token.
+
+   The FeatureValue Class 
+
+   FeatureValue holds a feature with its value.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+Constructor               
+`FeatureValue(const       The constructor simply accepts details and
+StringXML& feature,       assigns the private data members of the
+double value)'            FeatureValue.
+`getFeature()'            Returns the name of the feature.
+`getValue()'              Returns the value of the feature.
+
+   The FeatureValueExtractor Class 
+
+   The FeatureValueExtractor is an abstract class that is used to
+provide a an interface for classes that extract features to follow. The
+implementation of the `operator()' function will change with each
+feature that is implemented.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+Constructor               
+`FeatureValueExtractor()' Creates the FeatureValueExtractor.
+`operator()(const         Computes the FeatureValue.  It works on tokens
+vector<Token>& tokens,    and computes the value of a feature of the
+vector<Token>::const_iteratorparticular index.
+index, const StringXML&   
+text)'                    
+
+   The FeatureVectorValueExtractor Class 
+
+   FeatureVectorValueExtractor computes the values of the features by
+applying the FeatureValueExtractor algorithms to the text.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+Constructor               
+`FeatureVectorValueExtractor(The constructor accepts a vector of pointers
+vector<FeatureValueExtractor*>to FeatureValueExtractor s (derived classes).
+featureAlgorithms)'       The use of FeatureValueExtractors is an
+                          application of polymorphism, each derived
+                          class will have the same interface but perform
+                          a function in a different way.
+`operator()(const         Applies the FeatureValueExtractor algorithms
+vector<Token>&            to the vector<Token> and returns a
+tokens,const StringXML&   vector<FeatureVector> that has the same length
+text)'                    of the vector of tokens.  For each token, a
+                          feature vector will be computed and returned
+                          in the same order.
+
+   The MaxEnt Class 
+
+   The MaxEnt class is a machine learning classifier using Maximum
+Entropy. The code was adapted from YASMET by Franz Josef Och.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+Constructor               
+`MaxEnt(const unsigned    Initialises internal variables and reads the
+int                       model in the modelfile.
+numberClasses,StringXML   
+modelFile)'               
+`classify(const           Accepts a FeatureVector, and returns the
+FeatureVector& features)' category with the highest probability.
+
+   Other Functions 
+
+   Other functions not contained within any class.  These functions
+perform tasks relating to type conversion and text processing.
+
+Function                  Description
+-------------------------------------------------------------------------- 
+`getToken(const           Returns the first token that can be found
+StringXML::const_iterator starting from begin.  Note that the Token that
+begin, const              is returned may actually be empty (when there
+StringXML::const_iterator is no more token starting from begin and
+end, Token&               ending before end) in that case it returns
+token,StringXML::size_typefalse.  It returns true if a token was found.
+offset=0, bool            The offset indicates the offset of begin in
+skipXML=true)'            the whole StringXML (if any).
+`tokenise(const           Returns a vector of tokens that can be found
+StringXML::const_iterator between begin and end.
+begin, const              
+StringXML::const_iterator 
+end, bool skipXML=true)'  
+`tokeniseWithNEInfo(const Returns a vector of tokens that can be found
+StringXML::const_iterator between begin and end, taking into account XML
+begin,const               tags, but skipping them.
+StringXML::const_iterator 
+end)'                     
+`'                        
+`'                        
+`'                        
+`'                        
+`'                        
+
+
+File: afnerDoc.info,  Node: Training,  Next: Testing,  Prev: Class Structure,  Up: API
+
+6.1 Training
+============
+
+Training data is generated using the function
+`printTrainingData(text,outputStream,printNumClasses=true)'
+
+   `text' is the annotated text read from a corpus file. This function
+tokenises the text given and extracts the feature values for the tokens
+and writes the training data to the outputstream given.  The function
+also accepts an argument printNumClasses which is set by default to
+true. If run with the default value, the first line of the training data
+(the number of classes) will be printed. If the function is used for
+training files in a batch, the number of classes should be printed for
+the first file and all subsequent calls to the function should have the
+argument value set to false. *Note Classifier::, for information about
+training data.
+
+
+File: afnerDoc.info,  Node: Testing,  Next: Without Classification,  Prev: Training,  Up: API
+
+6.2 Testing
+===========
+
+For testing to be done, a model file needs to be created from the
+training data generated.  The YASMET code should be used to do this.
+
+   Once a model file is created it can be used by the NEDeco class.  A
+decorator can be created like so:
+
+     NEDeco deco(text,true,modelFile);
+
+   Here, `text' is the (unannotated) text which will be searched for
+named entities. The second argument is whether classification will be
+done. For the classifier to run, it should be set to `true'.
+`modelFile' is the name of the YASMET generated model file.
+
+   When constructed, the decorator finds all the named entities. The
+entities found can be printed to an output stream with
+`deco.printEnts(outfile)'
+
+   Alternatively, the decorator functions (which are static) can be
+called without creating a decorator object. For example:
+
+     // model file
+     string modelFile = "model.mdl";
+     // text to recognised entites in
+     string text = readfile("txt.txt");
+     // resultant entity vector
+     vector<NamedEntity> neVec;
+     // find the entities
+     NEDeco.Decorate(text,neVec,true,modelFile);
+     // print the entities to cout
+     NEDeco.printEnts(neVec,cout);
+
+   This code performs the same functions as creating a decorator and
+using the `printEnts()' function, but allows access to the entities
+directly.  See the `NamedEntity' class specification for further
+details.
+
+
+File: afnerDoc.info,  Node: Without Classification,  Next: Feature Expansion,  Prev: Testing,  Up: API
+
+6.3 Without Classification
+==========================
+
+Recognition can be done without the use of the classifier. To do this,
+a decorator can be created with the second argument set to false and
+with a modelfile omitted. For example:
+
+     NEDeco deco(text,false);
+
+   The static function `Decorate' can be used similarly.  All other
+functions operate as normal.
+
+
+File: afnerDoc.info,  Node: Feature Expansion,  Next: Notes,  Prev: Without Classification,  Up: API
+
+6.4 Feature Expansion
+=====================
+
+Each feature is implemented as a class derived from
+FeatureValueExtractor.  The `operator()' function needs to be
+implemented to compute the correct value of the feature. More
+information to come...
+
+
+File: afnerDoc.info,  Node: Notes,  Next: Concept Index,  Prev: Feature Expansion,  Up: Top
+
+7 Notes
+*******
+
+Comments to dsmith@ics.mq.edu.au
+
+
+File: afnerDoc.info,  Node: Concept Index,  Prev: Notes,  Up: Top
+
+Concept Index
+*************
+
+ [index ]
+* Menu:
+
+* Adding features to the classifier.:    Feature Expansion.   (line   6)
+* An explanation of each component in AFNER.: Components.     (line   6)
+* Description of the main C++ functions.: API.                (line   6)
+* Diagram of classes.:                   Class Structure.     (line   6)
+* FeatureValue Class Description:        Class Structure.     (line 137)
+* FeatureValueExtractor Class Description: Class Structure.   (line 150)
+* FeatureVectorValueExtractor Class Description: Class Structure.
+                                                              (line 167)
+* Further information.:                  Notes.               (line   6)
+* Generating training data.:             Training.            (line   6)
+* How to run AFNER independently.:       Running AFNER.       (line   6)
+* Information on named entity tags.:     Entity Tagset.       (line   6)
+* Information on regular expression matching.: Regular Expression Handler.
+                                                              (line   6)
+* Information on the classifier.:        Classifier.          (line   6)
+* List checking method description. <1>: Lists.               (line   6)
+* List checking method description.:     List Handler.        (line   6)
+* List of features implemented.:         Features.            (line   6)
+* MaxEnt Class Description:              Class Structure.     (line 188)
+* NamedEntity Class Description:         Class Structure.     (line   8)
+* NEDeco Class Description:              Class Structure.     (line  33)
+* NEToken Class Description:             Class Structure.     (line 116)
+* Other Functions:                       Class Structure.     (line 203)
+* Overview of AFNER.:                    Overview.            (line   6)
+* Overview of regular expressions used in AFNER.: Regular Expression Handler.
+                                                              (line  23)
+* Running the recogniser without machine learning.: Without Classification.
+                                                              (line   6)
+* Running the recogniser.:               Testing.             (line   6)
+* Sample output.:                        Output.              (line   6)
+* SuffixTree Information.:               SuffixTree.          (line   6)
+* Token Class Description:               Class Structure.     (line  89)
+* Tokenisation method description.:      Tokeniser.           (line   6)
+
+
+
+Tag Table:
+Node: Top159
+Node: Overview694
+Node: Running AFNER1651
+Node: Components11996
+Node: Entity Tagset12615
+Node: Regular Expression Handler14222
+Node: Tokeniser16183
+Node: List Handler17606
+Node: Lists19110
+Node: SuffixTree20287
+Node: Classifier20589
+Node: Features22429
+Node: Output24373
+Node: API25166
+Node: Class Structure25801
+Node: Training36419
+Node: Testing37296
+Node: Without Classification38794
+Node: Feature Expansion39264
+Node: Notes39613
+Node: Concept Index39759
+
+End Tag Table
